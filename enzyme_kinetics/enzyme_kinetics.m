@@ -40,21 +40,33 @@ Nrf =  C(:,5);
 NrfNO2 =  C(:,6);
 NH4 =  C(:,7); % Not scrictly necessary
 
-% Plot outputs
+% Calculate reaction velocity
+V = diff(NH4)/dt;
+
+% Plot outputs -- reactants & products
 figure
 plot(t,NO3,t,NO2,t,NH4,'linewidth',2)
 hold on
 grid
 title('Michaelis & Menten model showing nitrate, nitrite, ammonia')
-xlabel('Time')
-ylabel('Concentration')
+xlabel('Time [s]')
+ylabel('Concentration [M]')
 legend('NO_3^-','NO_2^-','NH_4^+')
 
+% Plot outputs -- enzymes & complexes
 figure
 plot(t,Nap,t,NapNO3,t,Nrf,t,NrfNO2,'linewidth',2)
 hold on
 grid
 title('Michaelis & Menten model showing enzymes and complexes')
-xlabel('Time')
-ylabel('Concentration')
+xlabel('Time [s]')
+ylabel('Concentration [M]')
 legend('Free Nap','Nap \cdot NO_3^-','Free Nrf','Nrf \cdot NO_2^-')
+
+% Plot outputs -- reaction velocity
+figure
+plot(t(1:end-1),V,'b','linewidth',2)
+grid
+title('Reaction velocity')
+xlabel('Time [s]')
+ylabel('Velocity [M/s]')
