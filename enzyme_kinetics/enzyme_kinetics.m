@@ -62,7 +62,7 @@ V = diff(NH4)/dt;
 
 % Plot outputs -- reactants & products
 figure
-plot(t,NO3,t,NO2,t,NH4,'linewidth',2)
+plot(t,NO3,'r',t,NO2,'y',t,NH4,'g','linewidth',2)
 hold on
 grid
 title('Michaelis & Menten model showing nitrate, nitrite, ammonia')
@@ -72,7 +72,7 @@ legend('NO_3^-','NO_2^-','NH_4^+')
 
 % Plot outputs -- enzymes & complexes
 figure
-plot(t,Nap,t,NapNO3,t,Nrf,t,NrfNO2,'linewidth',2)
+plot(t,Nap,'b',t,NapNO3,'r',t,Nrf,'g',t,NrfNO2,'y','linewidth',2)
 hold on
 grid
 title('Michaelis & Menten model showing enzymes and complexes')
