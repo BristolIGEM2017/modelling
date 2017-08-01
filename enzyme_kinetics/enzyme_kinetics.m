@@ -3,13 +3,30 @@ close all
 clear all
 clc
 
-% Define rate constants
-k1 = 5;
-km1 = 3;
-k2 = 2;
-k3 = 5;
-km3 = 3;
-k4 = 2;
+% EITHER: define rate constants (in terms of grouped constants)
+Kcat_Nap = 2;
+Kd_Nap = 0.6;
+Km_Nap = 1;
+
+Kcat_Nrf = 2;
+Kd_Nrf = 0.6;
+Km_Nrf = 1;
+
+k1 = Kcat_Nap/(Km_Nap-Kd_Nap);
+k_1 = Kd_Nap*k1;
+k2 = Kcat_Nap;
+
+k3 = Kcat_Nrf/(Km_Nrf-Kd_Nrf);
+k_3 = Kd_Nrf*k3;
+k4 = Kcat_Nrf;
+
+% OR: define rate constants (in terms of individual paths)
+% k1 = 5;
+% k_1 = 3;
+% k2 = 2;
+% k3 = 5;
+% k_3 = 3;
+% k4 = 2;
 
 % Initial concentrations of each species
 NO3_0 = 10;
@@ -25,11 +42,11 @@ t_end = 5; % s
 dt = 0.001; % s
 
 % Prepare initial conditions
-init = [NO3_0;Nap_0;NapNO3_0;NO2_0;Nrf_0;NrfNO2_0;NH4_0];
+init = [NO3_0; Nap_0; NapNO3_0; NO2_0; Nrf_0; NrfNO2_0; NH4_0];
 tspan = 0:dt:t_end;
 
 % Run ODE solver, calling enzyme_ODE.m
-[t,C]=ode45(@(t,C) enzyme_ODE(t,C,k1,km1,k2,k3,km3,k4),tspan,init);
+[t,C]=ode45(@(t,C) enzyme_ODE(t, C, k1, k_1, k2, k3, k_3, k4),tspan,init);
 
 % Pass solver output into more readable variables
 NO3 = C(:,1);
