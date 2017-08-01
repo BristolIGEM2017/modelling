@@ -10,7 +10,7 @@ function dCdt = enzyme_ODE(t,C,k1,km1,k2,k3,km3,k4)
 
     % Define each species' derivative
     dNO3_dt = km1*NapNO3 - k1*Nap*NO3;
-    dNap_dt = Km1*NapNO3 - k1*Nap*NO3 + k2*NapNO3;
+    dNap_dt = km1*NapNO3 - k1*Nap*NO3 + k2*NapNO3;
     dNapNO3_dt = -km1*NapNO3 + k1*Nap*NO3 - + k2*NapNO3;
     dNO2_dt = km3*NrfNO2  - k3*Nrf*NO2;
     dNrf_dt = km3*NrfNO2  - k3*Nrf*NO2 + k4*NrfNO2;
