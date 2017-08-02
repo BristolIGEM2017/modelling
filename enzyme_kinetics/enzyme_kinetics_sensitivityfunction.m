@@ -1,4 +1,4 @@
-function [] = enzyme_kinetics(Kcat_Nap,Kd_Nap,Km_Nap,Kcat_Nrf,Kd_Nrf,Km_Nrf)
+function [] = enzyme_kinetics_sensitivityfunction(Kcat_Nap,Kd_Nap,Km_Nap,Kcat_Nrf,Kd_Nrf,Km_Nrf)
     % EITHER: define rate constants (in terms of grouped constants)
     k1 = Kcat_Nap/(Km_Nap-Kd_Nap);
     k_1 = Kd_Nap*k1;
