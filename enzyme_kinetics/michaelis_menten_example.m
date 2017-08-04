@@ -4,9 +4,9 @@
 clear all
 clc
 
-k1 = 10;
-km1 = 5;
-k2 = 12;
+k1 = 20;
+km1 = 15;
+k2 = 1;
 
 Km = (k2+km1)/k1; % michaelis-menten constant
 
@@ -38,10 +38,25 @@ xlabel('Time')
 ylabel('Concentration')
 legend('Substrate','Free enzyme','Complex','Product')
 
+% Comparison with QSSA ---------------------------------
 figure
 plot(s,dpdt,s,V,'linewidth',2);
 grid on
 xlabel('[S]')
 ylabel('V')
-title('Michaelis-Menten plot')
+title('Comparison of exact ODE and QSSA - V/[S]')
 legend('Actual dp/dt','M-M velocity')
+axis([0 max(s) 0 max(V)])
+
+[t_QSSA,C_QSSA]=ode45(@(t,C) example_QSSA_ODE(t,C,e_0,k1,km1,k2),tspan,[s_0;p_0]);
+s_QSSA = C_QSSA(:,1); p_QSSA = C_QSSA(:,2);
+
+figure
+plot(t,p,t_QSSA,p_QSSA,'linewidth',2)
+grid on
+title('Comparison of exact ODE and QSSA - Time')
+xlabel('Time')
+ylabel('Product concentration')
+legend('Exact ODE','QSSA')
+
+
