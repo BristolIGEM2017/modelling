@@ -4,15 +4,15 @@ clear all
 clc
 
 % EITHER: define rate constants (in terms of grouped constants)
-Kcat_Nap = 2;
-Kd_Nap = 0.6;
-Km_Nap = 1;
+Kcat_Nap = 500; % 1/s
+Kd_Nap = 10e-3; % M
+Km_Nap = 15e-3; % M
 
-Kcat_Nrf = 2;
-Kd_Nrf = 0.6;
-Km_Nrf = 1;
+Kcat_Nrf = 770;  % 1/s
+Kd_Nrf = 20e-3;  % M
+Km_Nrf = 25e-3;  % M
 
-k1 = Kcat_Nap/(Km_Nap-Kd_Nap);
+k1 = Kcat_Nap/(Km_Nap-Kd_Nap); 
 k_1 = Kd_Nap*k1;
 k2 = Kcat_Nap;
 
@@ -29,16 +29,16 @@ k4 = Kcat_Nrf;
 % k4 = 2;
 
 % Initial concentrations of each species
-NO3_0 = 10;
-Nap_0 =  3;
-NapNO3_0 =  0;
-NO2_0 =  5;
-Nrf_0 =  3;
-NrfNO2_0 =  0;
-NH4_0 =  0;
+NO3_0 = 10e-2; % M
+Nap_0 =  3e-2; % M
+NapNO3_0 =  0; % M
+NO2_0 =  5e-3; % M
+Nrf_0 =  3e-2; % M
+NrfNO2_0 =  0; % M
+NH4_0 =  0; % M
 
 % Set end time and timestep of simulation
-t_end = 5; % s
+t_end = 1; % s
 dt = 0.001; % s
 
 % Prepare initial conditions
