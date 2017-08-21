@@ -5,20 +5,27 @@ close all
 clear all
 clc
 
-dx = 0.5; % m
-dy = 0.5; % m
+dx = 0.4; % m
+dy = 0.4; % m
 
 lenX = 30; % m
 lenY = 30; % m
 
-dt = 0.05; % s
-nptst = 1000;
+dt = 0.1; % s
 
-a = 0.3; % diffusion coeff
-u = -.02; % x wind  speed in m/s
-v = -.5; % y windspeed in m/s
+a = .3; % diffusion coeff
+u = 0.5; % x wind  speed in m/s
+v = 0.2; % y windspeed in m/s
 
 % Derived quantities
+CFLx = 2*dt*a/dx^2;
+CFLy = 2*dt*a/dy^2;
+disp(['CFLx = ',num2str(CFLx),', CFLy = ',num2str(CFLy)]);
+if CFLx > 1 || CFLy > 1
+    error(['One/both diffusion CFL condition(s) not fulfilled - ',...
+        'change dt, dx, dy and/or diffusivity coefficient']);
+end
+
 nptsi = lenX/dx + 4;
 nptsj = lenY/dy + 4;
 
@@ -30,24 +37,42 @@ ypts = linspace(0,lenY,nptsj-4);
 % Read in sources and initialise f matrix
 create_sources;
 
+% Initialise time loop
+E(1) = 1; n = 0; f_new = ones(nptsi,nptsj);
+
 % Calculate
 tic
-for n = 1:nptst-1
+while E > 1e-6
+    % Update f
+    n = n + 1;
+    f = f_new;
+    
+    % Loop through i & j
     for i = 2:nptsi-1
         for j = 2:nptsj-1
-            f(i,j,n+1) = f(i,j,n) + ...
-                dt*a*(f(i+1,j,n)+f(i-1,j,n)-2*f(i,j,n))/dx^2 + ...
-                dt*a*(f(i,j+1,n)+f(i,j-1,n)-2*f(i,j,n))/dy^2;
+            Diff = dt*a*(f(i+1,j)+f(i-1,j)-2*f(i,j))/dx^2 + ...
+                dt*a*(f(i,j+1)+f(i,j-1)-2*f(i,j))/dy^2;
             
-            % If also want advection:
-            f(i,j,n+1) = f(i,j,n+1) - ...
-                dt*(u*(f(i+1,j,n)-f(i-1,j,n))/(2*dx) + ...
-                v*(f(i,j+1,n)-f(i,j-1,n))/(2*dy));
+            Adv = dt*(u*(f(i+1,j)-f(i-1,j))/(2*dx) + ...
+                v*(f(i,j+1)-f(i,j-1))/(2*dy));
+            
+            f_new(i,j) = f(i,j) + Diff - Adv;                
         end
     end
+    
+    % Impose source matrix for next time step 
     for srccounter = 1:numel(srcx)
-        % Impose source matrix for next time step
-        f(idx(srccounter),jdx(srccounter),n+1) = srcval(srccounter);
+        f_new(idx(srccounter),jdx(srccounter)) = srcval(srccounter);
+    end
+    
+    % Update error
+    E = max(max(abs(f-f_new))); Error_store(n) = E;
+    disp(['Timestep = ', num2str(n),', Error = ', num2str(E)])
+    
+    % Instability condition break
+    if E > 100
+        error('Unstable scheme - review CFL or artificial diffusion');
+        break
     end
 end
 toc
