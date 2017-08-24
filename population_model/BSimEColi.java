@@ -27,10 +27,11 @@ public class BSimEColi {
     sim.setSimulationTime(10.0);
     sim.setTimeFormat("0.00");
     sim.setBound(100, 100, 100);
+    sim.setSolid(true, true, true);
 
     // Rate Constants
-    double kcat_Nap = 500, kd_Nap = 10e-3, km_Nap = 15e-3;
-    double kcat_Nrf = 770, kd_Nrf = 20e-3, km_Nrf = 25e-3;
+    double kcat_Nap = 2, kd_Nap = 0.6, km_Nap = 1;
+    double kcat_Nrf = 2, kd_Nrf = 0.6, km_Nrf = 1;
 
     double k1 = kcat_Nap / (km_Nap - kd_Nap);
     double k_1 = kd_Nap * k1;
@@ -40,58 +41,56 @@ public class BSimEColi {
 
     class EColiODEBacterium extends BSimBacterium {
       protected MyODE ode;
-      protected double[] y, yNew;
+      protected double[] x, xNew;
       public EColiODEBacterium(BSim sim, Vector3d position) {
         super(sim, position);
         ode = new MyODE();
-        y = ode.getICs();
+        x = ode.getICs();
       }
 
       @Override
       public void action() {
         super.action();
-        yNew = BSimOdeSolver.rungeKutta45(ode, sim.getTime(), y, sim.getDt());
-        y = yNew;
+        xNew = BSimOdeSolver.rungeKutta45(ode, sim.getTime(), x, sim.getDt());
+        x = xNew;
       }
 
       class MyODE implements BSimOdeSystem {
         private int numEq = 7;
-        public double[] derivativeSystem(double x, double[] y) {
-          double[] dy = new double[numEq];
+        public double[] derivativeSystem(double t, double[] x) {
+          double[] dx = new double[numEq];
           // Set of ODES describing enzyme kinetics
-          dy[0] = k_1 * y[2] - k1 * y[1] * y[0];
-          dy[1] = k_1 * y[2] - k1 * y[1] * y[0] + k2 * y[2];
-          dy[2] = k1 * y[1] * y[0] - k_1 * y[2] - k2 * y[2];
-          dy[3] = k2 * y[2] + k_3 * y[5] - k3 * y[4] * y[3];
-          dy[4] = k_3 * y[5] - k3 * y[4] * y[3] + k4 * y[5];
-          dy[5] = k3 * y[1] * y[0] - k_3 * y[5] - k4 * y[5];
-          dy[6] = k4 * y[5];
-          return dy;
+          dx[0] = k_1 * x[2] - k1 * x[1] * x[0];
+          dx[1] = k_1 * x[2] - k1 * x[1] * x[0] + k2 * x[2];
+          dx[2] = k1 * x[1] * x[0] - k_1 * x[2] - k2 * x[2];
+          dx[3] = k2 * x[2] + k_3 * x[5] - k3 * x[4] * x[3];
+          dx[4] = k_3 * x[5] - k3 * x[4] * x[3] + k4 * x[5];
+          dx[5] = k3 * x[3] * x[4] - k_3 * x[5] - k4 * x[5];
+          dx[6] = k4 * x[5];
+
+          return dx;
         }
         public double[] getICs() {
           double[] ics = new double[numEq];
           // Set up initial conditions
-          ics[0] = 10e-2;  // NO3
-          ics[1] = 3e-2;   // Nap
+          ics[0] = 10; //10e-2;  // NO3
+          ics[1] = 5; //3e-2;   // Nap
           ics[2] = 0.0;    // NapNO3
-          ics[3] = 5e-3;   // NO2
-          ics[4] = 3e-2;   // Nrf
+          ics[3] = 10;//5e-3;   // NO2
+          ics[4] = 5;//3e-2;   // Nrf
           ics[5] = 0.0;    // NrfNO2
           ics[6] = 0.0;    // NH4
           return ics;
         }
-        public int getNumEq() {
-          return numEq;
-        }
+        public int getNumEq() { return numEq; }
       }
-
-      public double[] getODEValue() { return y; }
+      public double[] getODEValue() { return x; }
     }
 
     final Vector<EColiODEBacterium> bacteria = new Vector<EColiODEBacterium>();
 
 
-    while(bacteria.size() < 10) {
+    while(bacteria.size() < 1000) {
 			EColiODEBacterium b = new EColiODEBacterium(sim,
 			                      new Vector3d(Math.random()*sim.getBound().x,
 						                             Math.random()*sim.getBound().y,
@@ -109,14 +108,13 @@ public class BSimEColi {
       }
     });
 
-    BSimP3DDrawer drawer = new BSimP3DDrawer(sim, 800,600) {
+    BSimP3DDrawer drawer = new BSimP3DDrawer(sim, 1000,1000) {
 			@Override
 			public void scene(PGraphics3D p3d) {
 				for(EColiODEBacterium b : bacteria) {
-          double r = Math.random();
-          int G = (int) (255.0 * r);
-          int R = (int) (255.0 * r);
-          int B = (int) (255.0 * r);
+          int G = (int) (10 * b.getODEValue()[6]);
+          int R = 150;
+          int B = 150;
           draw(b, new Color(R, G, B));
 				}
 			}
@@ -130,8 +128,8 @@ public class BSimEColi {
       public void before() {
         super.before();
         String buffer = new String();
-        for(int i = 0; i < bacteria.size(); i++) {
-          buffer = buffer + ",Bac" + i + "_state";
+        for(int i = 0; i < 7; i++) {
+          buffer = buffer + ",Equation_" + i + "_stat";
         }
         write("Time Seconds" + buffer);
       }
@@ -140,13 +138,15 @@ public class BSimEColi {
 			public void during() {
         String o = sim.getFormattedTime();
         String buffer = new String();
-        for (EColiODEBacterium b : bacteria) {
-          buffer = buffer + "," + b.getODEValue()[0]; // Writes out value of NO3
-        }
+        //for (EColiODEBacterium b : bacteria) {
+          for (int i = 0; i < 7; i++) {
+            buffer = buffer + "," + bacteria.get(0).getODEValue()[i]; // Writes out value of NO3
+          }
+        //}
         write(o + buffer);
 			}
 		};
-		logger.setDt(0.1);
+		logger.setDt(0.01);
 		sim.addExporter(logger);
 
     BSimMovExporter movExporter = new BSimMovExporter(sim, drawer, resultsDir + "BSim.mov");
@@ -157,7 +157,7 @@ public class BSimEColi {
 		pngExporter.setDt(0.5);
 		sim.addExporter(pngExporter);
 
-    sim.preview();
+    //sim.preview();
     sim.export();
   }
 }
