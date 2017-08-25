@@ -2,16 +2,17 @@
 #include<stdlib.h>
 #include<stdio.h>
 #include<sys/time.h>
+#include<omp.h>
 
 int main(int argc, char *argv[]) {
 
-  float dx, dt, final_t, a, v, diff, adv;
+  float dx, dt, final_t, a, v, err, diff, adv;
   int npts;
   FILE *fp;
 
   // Simulation parameters
   npts = 101;
-  final_t = 10;
+  final_t = 100;
   dx = 1;
   dt = 1;
   err = 0;
@@ -33,10 +34,11 @@ int main(int argc, char *argv[]) {
     printf("Timestep: %d\n", t);
 
     // Impose initial conditions
-    U[20][0] = 1;
-    U[30][0] = 2;
+    U[20][t] = 1.;
+    U[30][t] = 2.;
 
     // March in space
+    #pragma omp parallel
     for (int i = 1; i < npts-1; i++) {
       diff = dt * a * (U[i+1][t] + U[i-1][t] - 2 * U[i][t]) / (dx * dx);
       adv = dt * v * (U[i+1][t] - U[i-1][t]) / (2 * dx);
@@ -57,7 +59,6 @@ int main(int argc, char *argv[]) {
   }
 
   fclose(fp);
-  free(T);
   free(U);
 
   return EXIT_SUCCESS;
