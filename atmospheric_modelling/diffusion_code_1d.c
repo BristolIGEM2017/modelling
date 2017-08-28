@@ -20,6 +20,7 @@ int main(int argc, char *argv[]) {
   v = 0.3;  // Transport velocity
   a = 0.15;  // Diffusion Coefficient
 
+  // Set up of 1D array
   double *err;
   err = (double *)calloc((int)final_t/dt, sizeof(float *) );
 
@@ -38,13 +39,12 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
+  // Impose initial conditions
+  U[20][0] = 1.;
+  U[30][0] = 2.;
+
   // March in time
   for (int t = 0; t < (int)(final_t/dt); t++) {
-    // printf("Timestep: %d\n", t);
-
-    // Impose initial conditions
-    U[20][t] = 1.;
-    U[30][t] = 2.;
 
     // Set the convergence error to zero
     err[t] = 0;
@@ -57,10 +57,11 @@ int main(int argc, char *argv[]) {
 
       U[i][t+1] = U[i][t] + diff - adv;
 
-      // Calculate the change in solution value
+      // Re-impose initial conditions in next timestep for error calculation
+      U[20][t+1] = 1.;
+      U[30][t+1] = 2.;
       if (err[t] < fabs(U[i][t+1] - U[i][t])) {err[t] = fabs(U[i][t+1] - U[i][t]);}
     };
-    //U = (double**)realloc(U, (t + 1) * sizeof(double *));
   };
 
   // Data output
@@ -75,6 +76,7 @@ int main(int argc, char *argv[]) {
     fprintf(fp, "\n");
   }
 
+  // free memory
   fclose(fp);
   for(int i = 0; i < npts; i++) free(U[i]);
 
