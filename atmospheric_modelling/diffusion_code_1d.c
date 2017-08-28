@@ -6,36 +6,48 @@
 
 int main(int argc, char *argv[]) {
 
-  float dx, dt, final_t, a, v, err, diff, adv;
+  float dx, dt, final_t, a, v, diff, adv;
   int npts;
   FILE *fp;
 
   // Simulation parameters
   npts = 101;
-  final_t = 100;
+  final_t = 1000;
   dx = 1;
   dt = 1;
-  err = 0;
 
   // Advection-Diffusion Coefficients
   v = 0.3;  // Transport velocity
   a = 0.15;  // Diffusion Coefficient
+
+  double *err;
+  err = (double *)calloc((int)final_t/dt, sizeof(float *) );
 
   // Set up of 2D array
   double **U;
   U = (double **)calloc(npts, sizeof(double *) );
 
   for (int i = 0; i < npts; i++){
-    U[i] = calloc((int)(final_t/dt), sizeof(double) );
+    U[i] = calloc((int)final_t/dt + 1, sizeof(double) );
+  }
+
+  // Check CFL condition
+  float CFL = (2 * dt * a) / (dx * dx);
+  if (CFL > 1.0) {
+    printf("CFL of %f too large, reduce dt, diffusivity or increase dx\n", CFL);
+    return EXIT_FAILURE;
   }
 
   // March in time
   for (int t = 0; t < (int)(final_t/dt); t++) {
-    printf("Timestep: %d\n", t);
+    // printf("Timestep: %d\n", t);
 
     // Impose initial conditions
     U[20][t] = 1.;
     U[30][t] = 2.;
+
+    // Set the convergence error to zero
+    err[t] = 0;
 
     // March in space
     #pragma omp parallel
@@ -44,22 +56,27 @@ int main(int argc, char *argv[]) {
       adv = dt * v * (U[i+1][t] - U[i-1][t]) / (2 * dx);
 
       U[i][t+1] = U[i][t] + diff - adv;
+
+      // Calculate the change in solution value
+      if (err[t] < fabs(U[i][t+1] - U[i][t])) {err[t] = fabs(U[i][t+1] - U[i][t]);}
     };
+    //U = (double**)realloc(U, (t + 1) * sizeof(double *));
   };
 
   // Data output
   fp = fopen("solution.dat", "w");
 
-  fprintf(fp, "Time [s], Values\n");
+  fprintf(fp, "Time [s], Max Error, Values\n");
   for (int t = 0; t < (int)(final_t/dt); t++) {
+    fprintf(fp, "%15.8E, %15.8E" , t * dt, err[t]);
     for (int i = 0; i < npts; i++) {
-      fprintf(fp, "%15.8E ,", U[i][t]);
+      fprintf(fp, ", %15.8E", U[i][t]);
     }
     fprintf(fp, "\n");
   }
 
   fclose(fp);
-  free(U);
+  for(int i = 0; i < npts; i++) free(U[i]);
 
   return EXIT_SUCCESS;
 }
