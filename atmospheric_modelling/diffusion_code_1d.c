@@ -6,31 +6,25 @@
 
 int main(int argc, char *argv[]) {
 
-  float dx, dt, final_t, a, v, diff, adv;
-  int npts;
+  float dx, dt, final_t, a, v, diff, adv, err, tol;
+  int npts, t;
   FILE *fp;
 
   // Simulation parameters
   npts = 101;
   final_t = 1000;
-  dx = 1;
-  dt = 1;
+  dx = 1.;
+  dt = 1.;
+  tol = 1E-6;
 
   // Advection-Diffusion Coefficients
   v = 0.3;  // Transport velocity
   a = 0.15;  // Diffusion Coefficient
 
   // Set up of 1D array
-  double *err;
-  err = (double *)calloc((int)final_t/dt, sizeof(float *) );
-
-  // Set up of 2D array
-  double **U;
-  U = (double **)calloc(npts, sizeof(double *) );
-
-  for (int i = 0; i < npts; i++){
-    U[i] = calloc((int)final_t/dt + 1, sizeof(double) );
-  }
+  double *U, *Unew;
+  U = (double *)calloc(npts, sizeof(double *) );
+  Unew = (double *)calloc(npts, sizeof(double *) );
 
   // Check CFL condition
   float CFL = (2 * dt * a) / (dx * dx);
@@ -40,45 +34,54 @@ int main(int argc, char *argv[]) {
   }
 
   // Impose initial conditions
-  U[20][0] = 1.;
-  U[30][0] = 2.;
+  U[20] = 1.;
+  U[30] = 2.;
+  t = 0;
 
-  // March in time
-  for (int t = 0; t < (int)(final_t/dt); t++) {
+  // March in time until convergence
+  err = 1E-4;
+  while (err > tol) {
 
     // Set the convergence error to zero
-    err[t] = 0;
+    err = 0;
 
     // March in space
     #pragma omp parallel
     for (int i = 1; i < npts-1; i++) {
-      diff = dt * a * (U[i+1][t] + U[i-1][t] - 2 * U[i][t]) / (dx * dx);
-      adv = dt * v * (U[i+1][t] - U[i-1][t]) / (2 * dx);
+      diff = dt * a * ((U[i+1] + U[i-1] - 2 * U[i]) / (dx * dx));
+      adv = dt * v * ((U[i+1] - U[i-1]) / (2 * dx));
 
-      U[i][t+1] = U[i][t] + diff - adv;
+      Unew[i] = U[i] + diff - adv;
 
       // Re-impose initial conditions in next timestep for error calculation
-      U[20][t+1] = 1.;
-      U[30][t+1] = 2.;
-      if (err[t] < fabs(U[i][t+1] - U[i][t])) {err[t] = fabs(U[i][t+1] - U[i][t]);}
+      Unew[20] = 1.;
+      Unew[30] = 2.;
+      if (err < fabs(Unew[i] - U[i])) {err = fabs(Unew[i] - U[i]);}
     };
+
+    for (int i = 1; i < npts-1; i++) {
+      U[i] = Unew[i];
+    }
+
+    t++;
   };
 
   // Data output
   fp = fopen("solution.dat", "w");
 
-  fprintf(fp, "Time [s], Max Error, Values\n");
-  for (int t = 0; t < (int)(final_t/dt); t++) {
-    fprintf(fp, "%15.8E, %15.8E" , t * dt, err[t]);
-    for (int i = 0; i < npts; i++) {
-      fprintf(fp, ", %15.8E", U[i][t]);
-    }
-    fprintf(fp, "\n");
+  fprintf(fp, "Final Time [s], Error, Values\n");
+  fprintf(fp, "%15.8E, %15.8E" , t * dt, err);
+
+  for (int i = 0; i < npts; i++) {
+    fprintf(fp, ", %15.8E", U[i]);
   }
+
+  fprintf(fp, "\n");
 
   // free memory
   fclose(fp);
-  for(int i = 0; i < npts; i++) free(U[i]);
+  free(U);
+  free(Unew);
 
   return EXIT_SUCCESS;
 }
