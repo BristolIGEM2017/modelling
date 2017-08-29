@@ -6,8 +6,8 @@
 
 int main(int argc, char *argv[]) {
 
-  float dx, dy, dt, final_t, a, v, u, diff, adv;
-  int nptsi, nptsj;
+  float dx, dy, dt, final_t, a, u, v, diff, adv, err, tol;
+  int nptsi, nptsj, t;
   FILE *fp;
 
   // Simulation parameters
@@ -15,17 +15,14 @@ int main(int argc, char *argv[]) {
   nptsj = 101;
   final_t = 1000;
   dx = 1.;
-  dt = 0.1;
   dy = 1.;
+  dt = 0.25;
+  tol = 1E-6;
 
   // Advection-Diffusion Coefficients
-  v = 0.2;  // Transport velocity x
-  u = 0.2;  // Transport velocity y
+  u = 0.2;  // Transport velocity x
+  v = 0.2;  // Transport velocity y
   a = 0.8;  // Diffusion Coefficient
-
-  // Set up of 1D array
-  double *err;
-  err = (double *)calloc((int)final_t/dt, sizeof(float *) );
 
   // Set up of 2D array
   double **U, **Unew;
@@ -47,12 +44,14 @@ int main(int argc, char *argv[]) {
 
   // Impose initial conditions
   U[25][25] = 2.;
+  t = 0;
 
-  // March in time
-  for (int t = 0; t < (int)(final_t/dt); t++) {
+  // March in time until convergence
+  err = 1E-4;
+  while (err > tol) {
 
     // Set the convergence error to zero
-    err[t] = 0;
+    err = 0;
 
     // March in space
     #pragma omp parallel
@@ -64,13 +63,22 @@ int main(int argc, char *argv[]) {
               (dt * v * (U[i][j+1] - U[i][j-1]) / (2. * dy));
 
         Unew[i][j] = U[i][j] + diff - adv;
+
+        // Re-impose initial conditions
+        Unew[25][25] = 2.;
+        if (err < fabs(Unew[i][j] - U[i][j])) {err = fabs(Unew[i][j] - U[i][j]);}
       };
     };
 
-    U = Unew;
+    printf("%15.8E\n", err);
 
-    // Re-impose initial conditions
-    U[25][25] = 2.;
+    for (int i = 1; i < nptsi-1; i++) {
+      for (int j = 1; j < nptsj-1; j++) {
+        U[i][j] = Unew[i][j];
+      };
+    };
+
+    t++;
   };
 
 
@@ -89,6 +97,7 @@ int main(int argc, char *argv[]) {
   // free memory
   fclose(fp);
   for(int i = 0; i < nptsi; i++) free(U[i]);
+  for(int i = 0; i < nptsi; i++) free(Unew[i]);
 
   return EXIT_SUCCESS;
 }
