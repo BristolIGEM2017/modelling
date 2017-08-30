@@ -1,8 +1,45 @@
 #include<math.h>
 #include<stdlib.h>
 #include<stdio.h>
+#include<string.h>
 #include<sys/time.h>
 #include<omp.h>
+
+typedef struct {
+    float *x;
+    float *y;
+    float *val;
+} Source;
+
+int count_sources(char file_name[]) {
+  FILE* stream = fopen(file_name, "r");
+  char line[64];
+  int cnt = 0;
+  if (stream != NULL) {
+    while (fgets(line, 64, stream)) {
+      cnt++;
+    }
+  } else {
+    printf("File not found.");
+  }
+  fclose(stream);
+  return cnt;
+}
+
+float read_sources(char file_name[], Source sources) {
+  FILE* stream = fopen(file_name, "r");
+  char line[64];
+  int i = 0;
+  if (stream != NULL) {
+    while (fgets(line, 64, stream)) {
+      fscanf(stream, "%f, %f, %f", &sources.x[i], &sources.y[i] ,&sources.val[i]);
+      i++;
+    }
+  } else {
+    printf("File not found.");
+  }
+  fclose(stream);
+}
 
 int main(int argc, char *argv[]) {
 
@@ -18,6 +55,18 @@ int main(int argc, char *argv[]) {
   dy = 1.;
   dt = 0.25;
   tol = 1E-6;
+
+  // Read in sources file
+  char source_file[] = "sources.dat";
+  int lines = count_sources("sources.dat");
+
+  // Create struct that will contain all sources and allocate memory
+  Source sources;
+  sources.x = calloc(lines, sizeof(double) );
+  sources.y = calloc(lines, sizeof(double) );
+  sources.val = calloc(lines, sizeof(double) );
+
+  read_sources(source_file, sources);
 
   // Advection-Diffusion Coefficients
   u = 0.2;  // Transport velocity x
@@ -79,7 +128,6 @@ int main(int argc, char *argv[]) {
     t++;
   };
 
-
   // Data output
   fp = fopen("solution.dat", "w");
 
@@ -90,7 +138,6 @@ int main(int argc, char *argv[]) {
     fprintf(fp, "\n");
   }
   fprintf(fp, "\n");
-
 
   // free memory
   fclose(fp);
