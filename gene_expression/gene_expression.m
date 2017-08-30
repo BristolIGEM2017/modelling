@@ -5,28 +5,31 @@ clear all; close all; clc;
 
 %% Constants setup
 % LacI concentration
-LacI = 5; % M
+LacI = 10; % M
+
+% IPTG concentration
+IPTG = 100; % M
 
 % Dissociation constants for DNA-LacI and LacI-IPTG
-Kd = 1; Kx = 0.1;
+Kd = 1; Kx = 0.1; % tick
 
 % Nap transcription rates as nucleotide count / polymerase rate x probab.
-R = 2000; % Nucleotides/s
-n_bp_Nap = 1000; % No of base pairs
+pR = 2000; % Nucleotides/s tick
+n_bp_Nap = 1000; % No of base pairs tick
 n_bp_Nrf = 2000;
 % k1's will be defined within the ODE
 
 % mRNA degradation rate
-d_mRNA = 2;
+d_mRNA = 2; % tick
 
 % Translation rate -- IS IT SAME FOR BOTH NAP & NRF? --
-k_mRNA = 8;
+k_mRNA = 8; % tick
 
 % Maturation rates
-m_Nap = 20; m_Nrf = 20;
+m_Nap = 20; m_Nrf = 20; % NOOOOO #ross #pls #plsross
 
 % Enzyme degradation rates
-d_Nap = 10; d_Nrf = 10;
+d_Nap = 10; d_Nrf = 10; % tick
 
 %% Simulation
 % Set end time and timestep of simulation
@@ -39,7 +42,7 @@ tspan = 0:dt:t_end;
 init = [0.001, 0, 0, 0, 0, 0, 0];
 
 % Run ODE solver, calling gene_expression_ODE.m
-[t,C]=ode45(@(t,C) gene_expression_ODE(t,C,R,LacI,Kd,Kx,n_bp_Nap...
+[t,C]=ode45(@(t,C) gene_expression_ODE(t,C,pR,LacI,IPTG,Kd,Kx,n_bp_Nap...
     ,n_bp_Nrf,d_mRNA,k_mRNA,m_Nap,m_Nrf,d_Nap,d_Nrf),tspan,init);
 
 %% Output

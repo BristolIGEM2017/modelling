@@ -1,16 +1,13 @@
-function dCdt = gene_expression_ODE(t,C,R,LacI,Kd,Kx,n_bp_Nap,n_bp_Nrf,d_mRNA,...
+function dCdt = gene_expression_ODE(t,C,pR,LacI,IPTG,Kd,Kx,n_bp_Nap,n_bp_Nrf,d_mRNA,...
     k_mRNA,m_Nap,m_Nrf,d_Nap,d_Nrf)
-    
-    if t < 0.1
-        IPTG = 100;
-    else
+
+    if t > 1
         IPTG = 0;
     end
-    
 
     % Calculate transcription rates
-    k_DNA_Nap = (R/n_bp_Nap)*(1+LacI/Kd*(1+IPTG/Kx));
-    k_DNA_Nrf = (R/n_bp_Nrf)*(1+LacI/Kd*(1+IPTG/Kx));
+    k_DNA_Nap = (pR/n_bp_Nap)/(1+LacI/Kd/(1+IPTG/Kx));
+    k_DNA_Nrf = (pR/n_bp_Nrf)/(1+LacI/Kd/(1+IPTG/Kx));
     
     DNA = C(1); mRNA_Nap = C(2); mRNA_Nrf = C(3); Nasc_Nap = C(4);
     Nasc_Nrf = C(5); Nap = C(6); Nrf = C(7);
