@@ -5,11 +5,32 @@
 #include<sys/time.h>
 #include<omp.h>
 
-typedef struct {
+typedef struct Source{
     float *x;
     float *y;
     float *val;
+    float max_x;
+    float max_y;
+    float min_x;
+    float min_y;
+    int length;
 } Source;
+
+Source minmax_scale(Source sources) {
+  // determine the minimum and maximum values
+  sources.max_x = 0.;
+  sources.max_y = 0.;
+  sources.min_x = 0.;
+  sources.min_y = 0.;
+
+  for (int i = sources.length - 1; i > 0; i--){
+    if (sources.x[i] > sources.max_x) { sources.max_x = sources.x[i]; };
+    if (sources.x[i] < sources.min_x) { sources.min_x = sources.x[i]; };
+    if (sources.y[i] > sources.max_y) { sources.max_y = sources.y[i]; };
+    if (sources.y[i] < sources.min_y) { sources.min_y = sources.y[i]; };
+  }
+  return sources;
+}
 
 int count_sources(char file_name[]) {
   FILE* stream = fopen(file_name, "r");
@@ -26,7 +47,13 @@ int count_sources(char file_name[]) {
   return cnt;
 }
 
-float read_sources(char file_name[], Source sources) {
+Source read_sources(char file_name[], Source sources) {
+  // Find length of file and allocate arrays
+  sources.length = count_sources(file_name);
+  sources.x = calloc(sources.length, sizeof(double) );
+  sources.y = calloc(sources.length, sizeof(double) );
+  sources.val = calloc(sources.length, sizeof(double) );
+
   FILE* stream = fopen(file_name, "r");
   char line[64];
   int i = 0;
@@ -39,6 +66,9 @@ float read_sources(char file_name[], Source sources) {
     printf("File not found.");
   }
   fclose(stream);
+
+  sources = minmax_scale(sources);
+  return sources;
 }
 
 int main(int argc, char *argv[]) {
@@ -56,17 +86,14 @@ int main(int argc, char *argv[]) {
   dt = 0.25;
   tol = 1E-6;
 
+  // Create struct that will contain all sources
+  Source sources;
+
   // Read in sources file
   char source_file[] = "sources.dat";
-  int lines = count_sources("sources.dat");
+  sources = read_sources(source_file, sources);
 
-  // Create struct that will contain all sources and allocate memory
-  Source sources;
-  sources.x = calloc(lines, sizeof(double) );
-  sources.y = calloc(lines, sizeof(double) );
-  sources.val = calloc(lines, sizeof(double) );
-
-  read_sources(source_file, sources);
+  // printf("%f, %f, %f, %f\n", sources.max_x, sources.max_y, sources.min_x, sources.min_y);
 
   // Advection-Diffusion Coefficients
   u = 0.2;  // Transport velocity x
@@ -143,6 +170,8 @@ int main(int argc, char *argv[]) {
   fclose(fp);
   for(int i = 0; i < nptsi; i++) free(U[i]);
   for(int i = 0; i < nptsi; i++) free(Unew[i]);
+  free(sources.x);
+  free(sources.y);
 
   return EXIT_SUCCESS;
 }
